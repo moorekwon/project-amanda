@@ -36,10 +36,6 @@ SECRET_KEY = SECRETS['SECRET_KEY']
 STATIC_URL = '/static_files/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'static_files')
 
-# Media files
-MEDIA_URL = '/media_files/'
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media_files')
-
 STATICFILES_DIRS = [
     os.path.join(BASE_DIR, 'static')
 ]
@@ -76,7 +72,9 @@ ROOT_URLCONF = 'config.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [
+            os.path.join(BASE_DIR, 'templates')
+        ],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -112,7 +110,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Asia/Seoul'
 
 USE_I18N = True
 

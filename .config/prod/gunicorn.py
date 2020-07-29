@@ -1,5 +1,5 @@
 daemon = False
-chdir = '/srv/amanda/app'
+chdir = '/srv/project-amanda/app'
 bind = 'unix:/run/amanda.sock'
 accesslog = '/var/log/gunicorn/access.log'
 errorlog = '/var/log/gunicorn/error.log'
