@@ -42,7 +42,7 @@ STATICFILES_DIRS = [
 
 ALLOWED_HOSTS = []
 
-# Application definition
+AUTH_USER_MODEL = 'members.Member'
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -55,6 +55,8 @@ INSTALLED_APPS = [
     'django_extensions',
     'rest_framework',
     'storages',
+
+    'members.apps.MembersConfig',
 ]
 
 MIDDLEWARE = [
