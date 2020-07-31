@@ -3,6 +3,8 @@ import datetime
 from django.contrib.auth.models import AbstractUser
 from django.core.exceptions import ValidationError
 from django.db import models
+from django.db.models.signals import post_save
+from django.dispatch import receiver
 
 from config.settings import AUTH_USER_MODEL
 
@@ -22,14 +24,8 @@ class Member(AbstractUser):
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['gender', ]
 
-    def age(self):
-        today = datetime.date.today()
-        today_year = str(today).split('-')[0]
-        if self.memberinfo.birth:
-            birth_year = str(self.memberinfo.birth).split('-')[0]
-            return int(today_year) - int(birth_year) + 1
-        else:
-            raise ValidationError('해당 유저의 정보가 아직 없습니다.')
+    def __str__(self):
+        return self.email
 
     def average_star(self):
         partners = self.partner_stars.all()
@@ -138,6 +134,18 @@ class MemberInfo(models.Model):
     religion = models.CharField(choices=RELIGION, max_length=60, blank=True)
     introduce = models.CharField(max_length=150, blank=True)
 
+    def __str__(self):
+        return self.member.email, self.nickname
+
+    def age(self):
+        today = datetime.date.today()
+        today_year = str(today).split('-')[0]
+        if self.birth:
+            birth_year = str(self.birth).split('-')[0]
+            return int(today_year) - int(birth_year) + 1
+        else:
+            raise ValidationError('해당 유저의 정보가 아직 없습니다.')
+
     def profile_percent(self):
         stories = self.member.stories.all()
         tag_type_selection = self.member.tag_type_selection
@@ -162,12 +170,18 @@ class MemberImage(models.Model):
     member = models.ForeignKey(AUTH_USER_MODEL, on_delete=models.CASCADE)
     image = models.ImageField(upload_to='member_images/>')
 
+    def __str__(self):
+        return self.member.email
+
 
 class MemberRibbon(models.Model):
     member = models.ForeignKey(AUTH_USER_MODEL, on_delete=models.CASCADE)
     paid_ribbon = models.IntegerField()
     current_ribbon = models.PositiveIntegerField()
     when = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f'{self.member.email}, paid: {self.paid_ribbon}, current: {self.current_ribbon}'
 
     def save(self, *args, **kwargs):
         ribbons = MemberRibbon.objects.filter(member=self.member)
@@ -179,11 +193,20 @@ class MemberRibbon(models.Model):
         super().save(*args, **kwargs)
 
 
+@receiver(post_save, sender=Member)
+def create_member_ribbon(sender, instance, created, **kwargs):
+    if created:
+        MemberRibbon.objects.create(member=instance, paid_ribbon=10, current_ribbon=10)
+
+
 class Star(models.Model):
     member = models.ForeignKey(AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='member_stars')
     partner = models.ForeignKey(AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='partner_stars')
     star = models.PositiveIntegerField()
     created = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f'{self.member.email} -> {self.partner.email}'
 
 
 class Pick(models.Model):
@@ -192,9 +215,15 @@ class Pick(models.Model):
     pick = models.BooleanField(default=True)
     created = models.DateTimeField(auto_now=True)
 
+    def __str__(self):
+        return f'{self.member.email} -> {self.partner.email}'
+
 
 class Tag(models.Model):
     name = models.CharField(max_length=60, blank=True)
+
+    def __str__(self):
+        return self.name
 
 
 class TagTypeSelection(models.Model):
@@ -215,3 +244,6 @@ class Story(models.Model):
     story = models.CharField(choices=STORY, max_length=60, blank=True)
     content = models.CharField(max_length=60, blank=True)
     created = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return self.member.email, self.story
