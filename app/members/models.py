@@ -36,6 +36,7 @@ class Member(AbstractUser):
             average_star = sum(star) / len(star)
         else:
             average_star = sum(star[:3]) / 3
+        print('average_star >> ', format(float(average_star), '.2f'))
         return format(float(average_star), '.2f')
 
     def status(self):
@@ -46,6 +47,7 @@ class Member(AbstractUser):
             user_status = 'pass'
         elif len(partners) >= 3 and self.average_star() < 3:
             user_status = 'fail'
+        print('user_status >> ', str(user_status))
         return str(user_status)
 
 
@@ -142,6 +144,7 @@ class MemberInfo(models.Model):
         today_year = str(today).split('-')[0]
         if self.birth:
             birth_year = str(self.birth).split('-')[0]
+            print('age >> ', int(today_year) - int(birth_year) + 1)
             return int(today_year) - int(birth_year) + 1
         else:
             raise ValidationError('해당 유저의 정보가 아직 없습니다.')
@@ -163,12 +166,13 @@ class MemberInfo(models.Model):
             profile_percent = 0
         else:
             profile_percent = sum(return_lst) / len(return_lst) * 100
+        print('profile_percent >> ', format(float(profile_percent), '.1f'))
         return format(float(profile_percent), '.1f')
 
 
 class MemberImage(models.Model):
     member = models.ForeignKey(AUTH_USER_MODEL, on_delete=models.CASCADE)
-    image = models.ImageField(upload_to='member_images/>')
+    image = models.ImageField(upload_to='member_images/')
 
     def __str__(self):
         return self.member.email
@@ -186,10 +190,11 @@ class MemberRibbon(models.Model):
     def save(self, *args, **kwargs):
         ribbons = MemberRibbon.objects.filter(member=self.member)
         if len(ribbons) == 0:
-            pass
+            print('len(ribbons) >> ', len(ribbons))
         else:
             pre = ribbons[len(ribbons) - 1]
             self.current_ribbon = pre.current_ribbon + self.paid_ribbon
+            print('current_ribbon >> ', self.current_ribbon)
         super().save(*args, **kwargs)
 
 
@@ -197,6 +202,10 @@ class MemberRibbon(models.Model):
 def create_member_ribbon(sender, instance, created, **kwargs):
     if created:
         MemberRibbon.objects.create(member=instance, paid_ribbon=10, current_ribbon=10)
+
+
+class MemberIdealType(models.Model):
+    pass
 
 
 class Star(models.Model):
