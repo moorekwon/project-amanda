@@ -2,3 +2,5 @@
 .git
 
 Dockerfile
+
+secrets.json
