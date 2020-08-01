@@ -35,8 +35,8 @@ AWS_DEFAULT_ACL = None
 SECRET_KEY = SECRETS['SECRET_KEY']
 
 # Static files
-STATIC_URL = '/static_files/'
-STATIC_ROOT = os.path.join(BASE_DIR, 'static_files')
+STATIC_URL = '/static/'
+STATIC_ROOT = os.path.join(ROOT_DIR, '.static')
 
 STATICFILES_DIRS = [
     os.path.join(BASE_DIR, 'static')
@@ -54,7 +54,6 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
 
-    'django_extensions',
     'rest_framework',
     'storages',
 

@@ -21,4 +21,8 @@ server {
         include             /etc/nginx/proxy_params;
         proxy_pass          http://unix:/run/amanda.sock;
     }
+
+    location /static/ {
+        alias               /srv/project-amanda/.static/;
+    }
 }

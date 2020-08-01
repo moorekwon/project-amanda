@@ -6,7 +6,51 @@ from django.db import models
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 
-from config.settings import AUTH_USER_MODEL
+REGION = (
+    ('seoul', '서울'),
+    ('gyeonggi', '경기'),
+    ('incheon', '인천'),
+    ('daejeon', '대전'),
+    ('chungbuk', '충북'),
+    ('chungnam', '충남'),
+    ('gangwon', '강원'),
+    ('busan', '부산'),
+    ('gyeongbuk', '경북'),
+    ('gyeongnam', '경남'),
+    ('daegu', '대구'),
+    ('ulsan', '울산'),
+    ('gwangju', '광주'),
+    ('jeonbuk', '전북'),
+    ('jeonnam', '전남'),
+    ('jeju', '제주'),
+)
+BODY_SHAPE = (
+    ('normal', '보통체형'),
+    ('plump', '통통한'),
+    ('curvy', '살짝볼륨'),
+    ('glamor', '글래머'),
+    ('thin', '마른'),
+    ('slimfirm', '슬림탄탄'),
+)
+RELIGION = (
+    ('none', '종교 없음'),
+    ('christian', '기독교'),
+    ('catholic', '천주교'),
+    ('buddhism', '불교'),
+    ('wonbuddhism', '원불교'),
+    ('confucian', '유교'),
+    ('islam', '이슬람교'),
+)
+DRINKING = (
+    ('sometimes', '가끔 마심'),
+    ('pretty', '어느정도 즐기는편'),
+    ('very', '술자리를 즐김'),
+    ('never', '마시지 않음'),
+)
+SMOKING = (
+    ('yes', '흡연'),
+    ('no', '비흡연'),
+)
 
 
 class Member(AbstractUser):
@@ -52,74 +96,14 @@ class Member(AbstractUser):
 
 
 class MemberInfo(models.Model):
-    REGION = (
-        ('seoul', '서울'),
-        ('gyeonggi', '경기'),
-        ('incheon', '인천'),
-        ('daejeon', '대전'),
-        ('chungbuk', '충북'),
-        ('chungnam', '충남'),
-        ('gangwon', '강원'),
-        ('busan', '부산'),
-        ('gyeongbuk', '경북'),
-        ('gyeongnam', '경남'),
-        ('daegu', '대구'),
-        ('ulsan', '울산'),
-        ('gwangju', '광주'),
-        ('jeonbuk', '전북'),
-        ('jeonnam', '전남'),
-        ('jeju', '제주'),
-    )
-    BODY_SHAPE = (
-        ('normal', '보통체형'),
-        ('plump', '통통한'),
-        ('curvy', '살짝볼륨'),
-        ('glamor', '글래머'),
-        ('thin', '마른'),
-        ('slimfirm', '슬림탄탄'),
-    )
-    PERSONALITY = (
-        ('intelligent', '지적인'),
-        ('calm', '차분한'),
-        ('humorous', '유머있는'),
-        ('optimistic', '낙천적인'),
-        ('introvert', '내향적인'),
-        ('extrovert', '외향적인'),
-        ('emotional', '감성적인'),
-        ('kind', '상냥한'),
-        ('cute', '귀여운'),
-        ('sexy', '섹시한'),
-        ('unique', '4차원인'),
-        ('cheerful', '발랄한'),
-        ('cool', '도도한'),
-    )
     BLOOD_TYPE = (
         ('ab', 'AB형'),
         ('a', 'A형'),
         ('b', 'B형'),
         ('o', 'O형'),
     )
-    DRINKING = (
-        ('sometimes', '가끔 마심'),
-        ('pretty', '어느정도 즐기는편'),
-        ('very', '술자리를 즐김'),
-        ('never', '마시지 않음'),
-    )
-    SMOKING = (
-        ('yes', '흡연'),
-        ('no', '비흡연'),
-    )
-    RELIGION = (
-        ('none', '종교 없음'),
-        ('christian', '기독교'),
-        ('catholic', '천주교'),
-        ('buddhism', '불교'),
-        ('wonbuddhism', '원불교'),
-        ('confucian', '유교'),
-        ('islam', '이슬람교'),
-    )
 
-    member = models.OneToOneField(AUTH_USER_MODEL, on_delete=models.CASCADE)
+    member = models.OneToOneField(Member, on_delete=models.CASCADE)
     birth = models.DateField(blank=False, null=True)
     nickname = models.CharField(unique=True, max_length=60)
     job = models.CharField(max_length=50, blank=True)
@@ -129,7 +113,6 @@ class MemberInfo(models.Model):
     body_shape = models.CharField(choices=BODY_SHAPE, blank=True, max_length=50)
     major = models.CharField(max_length=50, blank=True)
     tall = models.PositiveIntegerField(blank=True, null=True)
-    personality = models.CharField(choices=PERSONALITY, max_length=60, blank=True)
     blood_type = models.CharField(choices=BLOOD_TYPE, max_length=30, blank=True)
     drinking = models.CharField(choices=DRINKING, max_length=60, blank=True)
     smoking = models.CharField(choices=SMOKING, max_length=60, blank=True)
@@ -170,8 +153,43 @@ class MemberInfo(models.Model):
         return format(float(profile_percent), '.1f')
 
 
+class MemberIdealType(models.Model):
+    member = models.OneToOneField(Member, on_delete=models.CASCADE)
+    age_start = models.PositiveIntegerField(blank=True, null=True)
+    age_end = models.PositiveIntegerField(blank=True, null=True)
+    tall_start = models.PositiveIntegerField(blank=True)
+    tall_end = models.PositiveIntegerField(blank=True)
+    region1 = models.CharField(choices=REGION, blank=True, max_length=60)
+    region2 = models.CharField(choices=REGION, blank=True, max_length=60)
+    body_shape = models.CharField(choices=BODY_SHAPE, blank=True, max_length=60)
+    drinking = models.CharField(choices=DRINKING, blank=True, max_length=60)
+    smoking = models.CharField(choices=SMOKING, blank=True, max_length=60)
+    religion = models.CharField(choices=RELIGION, blank=True, max_length=60)
+
+
+class MemberPersonality(models.Model):
+    PERSONALITY = (
+        ('intelligent', '지적인'),
+        ('calm', '차분한'),
+        ('humorous', '유머있는'),
+        ('optimistic', '낙천적인'),
+        ('introvert', '내향적인'),
+        ('extrovert', '외향적인'),
+        ('emotional', '감성적인'),
+        ('kind', '상냥한'),
+        ('cute', '귀여운'),
+        ('sexy', '섹시한'),
+        ('unique', '4차원인'),
+        ('cheerful', '발랄한'),
+        ('cool', '도도한'),
+    )
+
+    member = models.ForeignKey(Member, on_delete=models.CASCADE, related_name='personalities')
+    personality = models.CharField(choices=PERSONALITY, max_length=60)
+
+
 class MemberImage(models.Model):
-    member = models.ForeignKey(AUTH_USER_MODEL, on_delete=models.CASCADE)
+    member = models.ForeignKey(Member, on_delete=models.CASCADE)
     image = models.ImageField(upload_to='member_images/')
 
     def __str__(self):
@@ -179,7 +197,7 @@ class MemberImage(models.Model):
 
 
 class MemberRibbon(models.Model):
-    member = models.ForeignKey(AUTH_USER_MODEL, on_delete=models.CASCADE)
+    member = models.ForeignKey(Member, on_delete=models.CASCADE)
     paid_ribbon = models.IntegerField()
     current_ribbon = models.PositiveIntegerField()
     when = models.DateTimeField(auto_now_add=True)
@@ -204,13 +222,9 @@ def create_member_ribbon(sender, instance, created, **kwargs):
         MemberRibbon.objects.create(member=instance, paid_ribbon=10, current_ribbon=10)
 
 
-class MemberIdealType(models.Model):
-    pass
-
-
 class Star(models.Model):
-    member = models.ForeignKey(AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='member_stars')
-    partner = models.ForeignKey(AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='partner_stars')
+    member = models.ForeignKey(Member, on_delete=models.CASCADE, related_name='member_stars')
+    partner = models.ForeignKey(Member, on_delete=models.CASCADE, related_name='partner_stars')
     star = models.PositiveIntegerField()
     created = models.DateTimeField(auto_now=True)
 
@@ -219,8 +233,8 @@ class Star(models.Model):
 
 
 class Pick(models.Model):
-    member = models.ForeignKey(AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='member_picks')
-    partner = models.ForeignKey(AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='partner_picks')
+    member = models.ForeignKey(Member, on_delete=models.CASCADE, related_name='member_picks')
+    partner = models.ForeignKey(Member, on_delete=models.CASCADE, related_name='partner_picks')
     pick = models.BooleanField(default=True)
     created = models.DateTimeField(auto_now=True)
 
@@ -249,7 +263,7 @@ class Story(models.Model):
         (3, '남들보다 이것 하나는 자신있어요'),
     )
 
-    member = models.ForeignKey(AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='stories')
+    member = models.ForeignKey(Member, on_delete=models.CASCADE, related_name='stories')
     story = models.CharField(choices=STORY, max_length=60, blank=True)
     content = models.CharField(max_length=60, blank=True)
     created = models.DateTimeField(auto_now=True)
