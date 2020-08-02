@@ -46,8 +46,12 @@ ALLOWED_HOSTS = []
 
 AUTH_USER_MODEL = 'members.Member'
 
+AUTHENTICATION_BACKENDS = [
+    'django.contrib.auth.backends.ModelBackend',
+    'allauth.account.auth_backends.AuthenticationBackend',
+]
+
 INSTALLED_APPS = [
-    'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
@@ -56,20 +60,25 @@ INSTALLED_APPS = [
     'django.contrib.sites',
 
     'storages',
-
-    'members.apps.MembersConfig',
-
     'rest_framework',
     'rest_framework.authtoken',
+
     'dj_rest_auth',
+    'dj_rest_auth.registration',
     'allauth',
     'allauth.account',
     'allauth.socialaccount',
-    'dj_rest_auth.registration',
+
+    'django.contrib.admin',
+
+    'members.apps.MembersConfig',
 ]
 
 SITE_ID = 1
+
+ACCOUNT_LOGOUT_ON_GET = True
 ACCOUNT_EMAIL_VERIFICATION = None
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
 REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': [
@@ -79,18 +88,23 @@ REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework.authentication.BasicAuthentication',
         'rest_framework.authentication.SessionAuthentication',
-        'rest_framework_simplejwt.authentication.JWTAuthentication',
     ]
 }
 
-REST_USE_JWT = True
+ACCOUNT_USER_MODEL_USERNAME_FIELD = None
+ACCOUNT_AUTHENTICATION_METHOD = 'email'
+ACCOUNT_EMAIL_REQUIRED = True
+ACCOUNT_UNIQUE_EMAIL = True
+ACCOUNT_USERNAME_REQUIRED = False
+ACCOUNT_USER_EMAIL_FIELD = 'email'
 
 REST_AUTH_SERIALIZERS = {
-    'JWT_SERIALIZER': 'members.serializers.SignupSerializer',
+    'LOGIN_SERIALIZER': 'dj_rest_auth.serializers.LoginSerializer',
+    'TOKEN_SERIALIZER': 'dj_rest_auth.serializers.TokenSerializer',
 }
 
 REST_AUTH_REGISTER_SERIALIZERS = {
-    'REGISTER_SERIALIZER': 'members.serializers.RegisterSerializer',
+    'REGISTER_SERIALIZER': 'members.serializers.SingUpSerializer',
 }
 
 MIDDLEWARE = [
@@ -144,7 +158,7 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/3.0/topics/i18n/
 
-LANGUAGE_CODE = 'en-us'
+LANGUAGE_CODE = 'ko-kr'
 
 TIME_ZONE = 'Asia/Seoul'
 

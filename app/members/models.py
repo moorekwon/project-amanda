@@ -90,6 +90,7 @@ class Member(AbstractUser):
     tag_type_selection = models.OneToOneField('TagTypeSelection', on_delete=models.CASCADE, blank=True, null=True)
 
     REQUIRED_FIELDS = ['gender', 'email']
+
     objects = UserManager()
 
     def __str__(self):
