@@ -129,7 +129,7 @@ class MemberInfo(models.Model):
 
     member = models.OneToOneField(AUTH_USER_MODEL, on_delete=models.CASCADE)
     birth = models.DateField(blank=False, null=True)
-    nickname = models.CharField(blank=False)
+    nickname = models.CharField(blank=False, max_length=40)
     job = models.CharField(max_length=50, blank=True)
     company = models.CharField(max_length=60, blank=True)
     school = models.CharField(max_length=50, blank=True)
