@@ -1,10 +1,16 @@
 import datetime
+import random
+import string
+import unicodedata
 
+from django.contrib.auth.base_user import BaseUserManager
 from django.contrib.auth.models import AbstractUser
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models.signals import post_save
 from django.dispatch import receiver
+
+from config.settings._base import AUTH_USER_MODEL
 
 REGION = (
     ('seoul', '서울'),
@@ -53,20 +59,38 @@ SMOKING = (
 )
 
 
+class UserManager(BaseUserManager):
+    def create_username(self):
+        username = ''.join(random.choice(string.ascii_lowercase) for i in range(5))
+        return unicodedata.normalize('NFKC', username) if isinstance(username, str) else username
+
+    def _create_user(self, email, password, **extra_fields):
+        email = self.normalize_email(email)
+        username = self.create_username()
+        user = self.model(username=username, email=email, **extra_fields)
+        user.set_password(password)
+        user.save(using=self._db)
+        return user
+
+    def create_user(self, email=None, password=None, **extra_fields):
+        extra_fields.setdefault('is_staff', False)
+        extra_fields.setdefault('is_superuser', False)
+        return self._create_user(email, password, **extra_fields)
+
+
 class Member(AbstractUser):
     GENDER = (
         ('female', 'female'),
         ('male', 'male'),
     )
 
-    email = models.EmailField(unique=True)
     gender = models.CharField(choices=GENDER, max_length=10)
     stars = models.ManyToManyField('self', through='Star', related_name='star_members', symmetrical=False)
     picks = models.ManyToManyField('self', through='Pick', related_name='pick_members', symmetrical=False)
     tag_type_selection = models.OneToOneField('TagTypeSelection', on_delete=models.CASCADE, blank=True, null=True)
 
-    USERNAME_FIELD = 'email'
-    REQUIRED_FIELDS = ['gender', ]
+    REQUIRED_FIELDS = ['gender', 'email']
+    objects = UserManager()
 
     def __str__(self):
         return self.email
@@ -103,9 +127,9 @@ class MemberInfo(models.Model):
         ('o', 'O형'),
     )
 
-    member = models.OneToOneField(Member, on_delete=models.CASCADE)
+    member = models.OneToOneField(AUTH_USER_MODEL, on_delete=models.CASCADE)
     birth = models.DateField(blank=False, null=True)
-    nickname = models.CharField(unique=True, max_length=60)
+    nickname = models.CharField(blank=False)
     job = models.CharField(max_length=50, blank=True)
     company = models.CharField(max_length=60, blank=True)
     school = models.CharField(max_length=50, blank=True)
@@ -154,7 +178,7 @@ class MemberInfo(models.Model):
 
 
 class MemberIdealType(models.Model):
-    member = models.OneToOneField(Member, on_delete=models.CASCADE)
+    member = models.OneToOneField(AUTH_USER_MODEL, on_delete=models.CASCADE)
     age_start = models.PositiveIntegerField(blank=True, null=True)
     age_end = models.PositiveIntegerField(blank=True, null=True)
     tall_start = models.PositiveIntegerField(blank=True)
@@ -184,12 +208,12 @@ class MemberPersonality(models.Model):
         ('cool', '도도한'),
     )
 
-    member = models.ForeignKey(Member, on_delete=models.CASCADE, related_name='personalities')
+    member = models.ForeignKey(AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='personalities')
     personality = models.CharField(choices=PERSONALITY, max_length=60)
 
 
 class MemberImage(models.Model):
-    member = models.ForeignKey(Member, on_delete=models.CASCADE)
+    member = models.ForeignKey(AUTH_USER_MODEL, on_delete=models.CASCADE)
     image = models.ImageField(upload_to='member_images/')
 
     def __str__(self):
@@ -197,7 +221,7 @@ class MemberImage(models.Model):
 
 
 class MemberRibbon(models.Model):
-    member = models.ForeignKey(Member, on_delete=models.CASCADE)
+    member = models.ForeignKey(AUTH_USER_MODEL, on_delete=models.CASCADE)
     paid_ribbon = models.IntegerField()
     current_ribbon = models.PositiveIntegerField()
     when = models.DateTimeField(auto_now_add=True)
@@ -216,15 +240,15 @@ class MemberRibbon(models.Model):
         super().save(*args, **kwargs)
 
 
-@receiver(post_save, sender=Member)
+@receiver(post_save, sender=MemberInfo)
 def create_member_ribbon(sender, instance, created, **kwargs):
     if created:
-        MemberRibbon.objects.create(member=instance, paid_ribbon=10, current_ribbon=10)
+        MemberRibbon.objects.create(member=instance.member, paid_ribbon=10, current_ribbon=10)
 
 
 class Star(models.Model):
-    member = models.ForeignKey(Member, on_delete=models.CASCADE, related_name='member_stars')
-    partner = models.ForeignKey(Member, on_delete=models.CASCADE, related_name='partner_stars')
+    member = models.ForeignKey(AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='member_stars')
+    partner = models.ForeignKey(AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='partner_stars')
     star = models.PositiveIntegerField()
     created = models.DateTimeField(auto_now=True)
 
@@ -233,8 +257,8 @@ class Star(models.Model):
 
 
 class Pick(models.Model):
-    member = models.ForeignKey(Member, on_delete=models.CASCADE, related_name='member_picks')
-    partner = models.ForeignKey(Member, on_delete=models.CASCADE, related_name='partner_picks')
+    member = models.ForeignKey(AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='member_picks')
+    partner = models.ForeignKey(AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='partner_picks')
     pick = models.BooleanField(default=True)
     created = models.DateTimeField(auto_now=True)
 
@@ -263,7 +287,7 @@ class Story(models.Model):
         (3, '남들보다 이것 하나는 자신있어요'),
     )
 
-    member = models.ForeignKey(Member, on_delete=models.CASCADE, related_name='stories')
+    member = models.ForeignKey(AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='stories')
     story = models.CharField(choices=STORY, max_length=60, blank=True)
     content = models.CharField(max_length=60, blank=True)
     created = models.DateTimeField(auto_now=True)
