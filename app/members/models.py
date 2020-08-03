@@ -5,7 +5,6 @@ import unicodedata
 
 from django.contrib.auth.base_user import BaseUserManager
 from django.contrib.auth.models import AbstractUser
-from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models.signals import post_save
 from django.dispatch import receiver
@@ -94,30 +93,7 @@ class Member(AbstractUser):
     objects = UserManager()
 
     def __str__(self):
-        return self.email
-
-    def average_star(self):
-        partners = self.partner_stars.all()
-        star = [partner.star for partner in partners]
-        if len(star) == 0:
-            average_star = 0
-        elif 0 < len(star) <= 3:
-            average_star = sum(star) / len(star)
-        else:
-            average_star = sum(star[:3]) / 3
-        print('average_star >> ', format(float(average_star), '.2f'))
-        return format(float(average_star), '.2f')
-
-    def status(self):
-        partners = self.partner_stars.all()
-        if len(partners) < 3:
-            user_status = 'on_screening'
-        elif len(partners) >= 3 and self.average_star() >= 3:
-            user_status = 'pass'
-        elif len(partners) >= 3 and self.average_star() < 3:
-            user_status = 'fail'
-        print('user_status >> ', str(user_status))
-        return str(user_status)
+        return f'{self.email}'
 
 
 class MemberInfo(models.Model):
@@ -145,36 +121,28 @@ class MemberInfo(models.Model):
     introduce = models.CharField(max_length=150, blank=True)
 
     def __str__(self):
-        return self.member.email, self.nickname
+        return f'{self.member}, {self.nickname}'
 
     def age(self):
         today = datetime.date.today()
         today_year = str(today).split('-')[0]
-        if self.birth:
-            birth_year = str(self.birth).split('-')[0]
-            print('age >> ', int(today_year) - int(birth_year) + 1)
-            return int(today_year) - int(birth_year) + 1
-        else:
-            raise ValidationError('해당 유저의 정보가 아직 없습니다.')
+        birth_year = str(self.birth).split('-')[0]
+        return int(today_year) - int(birth_year) + 1
 
     def profile_percent(self):
-        stories = self.member.stories.all()
-        tag_type_selection = self.member.tag_type_selection
+        done_infos = 0
+
         infos = [self.job, self.company, self.school, self.region, self.body_shape, self.major, self.tall,
-                 self.personality, self.blood_type, self.drinking, self.smoking, self.religion, self.introduce,
-                 stories, tag_type_selection]
-        return_lst = []
+                 self.blood_type, self.drinking, self.smoking, self.religion, self.introduce,
+                 self.member.tag_type_selection, self.member.personalities, self.member.stories]
 
         for info in infos:
             if not info:
-                return_lst.append(0)
+                pass
             else:
-                return_lst.append(1)
-        if sum(return_lst) == 0:
-            profile_percent = 0
-        else:
-            profile_percent = sum(return_lst) / len(return_lst) * 100
-        print('profile_percent >> ', format(float(profile_percent), '.1f'))
+                done_infos += 1
+
+        profile_percent = done_infos / len(infos) * 100
         return format(float(profile_percent), '.1f')
 
 
@@ -182,14 +150,20 @@ class MemberIdealType(models.Model):
     member = models.OneToOneField(AUTH_USER_MODEL, on_delete=models.CASCADE)
     age_start = models.PositiveIntegerField(blank=True, null=True)
     age_end = models.PositiveIntegerField(blank=True, null=True)
-    tall_start = models.PositiveIntegerField(blank=True)
-    tall_end = models.PositiveIntegerField(blank=True)
+    tall_start = models.PositiveIntegerField(blank=True, null=True)
+    tall_end = models.PositiveIntegerField(blank=True, null=True)
     region1 = models.CharField(choices=REGION, blank=True, max_length=60)
     region2 = models.CharField(choices=REGION, blank=True, max_length=60)
     body_shape = models.CharField(choices=BODY_SHAPE, blank=True, max_length=60)
     drinking = models.CharField(choices=DRINKING, blank=True, max_length=60)
     smoking = models.CharField(choices=SMOKING, blank=True, max_length=60)
     religion = models.CharField(choices=RELIGION, blank=True, max_length=60)
+
+
+@receiver(post_save, sender=MemberInfo)
+def create_member_idealtype(sender, instance, created, **kwargs):
+    if created:
+        MemberIdealType.objects.create(member=instance.member)
 
 
 class MemberPersonality(models.Model):
