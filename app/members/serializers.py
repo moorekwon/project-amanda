@@ -1,13 +1,9 @@
-import datetime
-
 from dj_rest_auth.registration.serializers import RegisterSerializer
-from dj_rest_auth.serializers import UserDetailsSerializer
 from django.contrib.auth import get_user_model
 from django.db.models import Avg, Count
 from rest_framework import serializers
-from rest_framework.generics import get_object_or_404
 
-from members.models import MemberInfo, MemberPersonality
+from members.models import MemberInfo, MemberIdealType
 
 Member = get_user_model()
 
@@ -97,3 +93,36 @@ class MemberInfoSerializer(serializers.ModelSerializer):
             'religion',
             'introduce',
         )
+
+
+class MemberInfoCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = MemberInfo
+        fields = (
+            'birth',
+            'nickname',
+            'job',
+            'company',
+            'school',
+            'region',
+            'body_shape',
+            'major',
+            'tall',
+            'blood_type',
+            'drinking',
+            'smoking',
+            'religion',
+            'introduce',
+        )
+
+    def create(self, validated_data):
+        member_id = self.context['request'].user.id
+        member = Member.objects.get(id=member_id)
+        idealtype = MemberIdealType.objects.create(member=member)
+        idealtype.member = member
+        idealtype.save()
+        memberinfo = MemberInfo.objects.create(member=member, **validated_data)
+        return memberinfo
+
+    def to_representation(self, instance):
+        return MemberInfoSerializer(instance).data

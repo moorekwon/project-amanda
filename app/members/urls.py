@@ -1,9 +1,9 @@
 from dj_rest_auth.views import (
-    LoginView, UserDetailsView, PasswordChangeView, LogoutView
+    LoginView, PasswordChangeView, LogoutView
 )
 from django.urls import path
 
-from members.views import SignupView, MemberDeleteView, MemberInfoView
+from members.views import SignupView, MemberDeleteView, MemberInfoView, MemberInfoCreateView
 
 urlpatterns = [
     path('signup/', SignupView.as_view()),
@@ -12,4 +12,5 @@ urlpatterns = [
     path('password/change/', PasswordChangeView.as_view()),
     path('delete/', MemberDeleteView.as_view()),
     path('member/info/', MemberInfoView.as_view()),
+    path('member/info/create/', MemberInfoCreateView.as_view()),
 ]
