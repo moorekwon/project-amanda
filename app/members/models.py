@@ -7,6 +7,8 @@ from django.contrib.auth.base_user import BaseUserManager
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.db.models import Count
+from django.db.models.signals import post_save
+from django.dispatch import receiver
 
 from config.settings._base import AUTH_USER_MODEL
 
@@ -197,16 +199,25 @@ class MemberRibbon(models.Model):
     def __str__(self):
         return f'{self.member.email}, paid: {self.paid_ribbon}, current: {self.current_ribbon}'
 
-    def save(self, *args, **kwargs):
-        ribbons = MemberRibbon.objects.filter(member=self.member)
-        ribbons_cnt = ribbons.aggregate(Count('member'))['member__count']
 
-        if ribbons_cnt > 0:
-            pre = ribbons[ribbons_cnt - 1]
-            self.current_ribbon = pre.current_ribbon + self.paid_ribbon
-        else:
-            MemberRibbon.objects.create(member=self.member, paid_ribbon=10, current_ribbon=10)
-        super().save(*args, **kwargs)
+@receiver(post_save, sender=MemberInfo)
+def create_memberribbon(sender, instance, created, **kwargs):
+    if created:
+        MemberIdealType.objects.create(member=instance.member)
+        MemberRibbon.objects.create(member=instance.member, paid_ribbon=10, current_ribbon=10)
+
+
+@receiver(post_save, sender=MemberRibbon)
+def update_memberribbon(sender, instance, created, **kwargs):
+    ribbons = MemberRibbon.objects.filter(member=instance.member)
+    ribbons_cnt = ribbons.aggregate(Count('member'))['member__count']
+    if created and ribbons_cnt > 1:
+        pre = ribbons[ribbons_cnt - 1]
+        ribbon = ribbons.last()
+        ribbon.current_ribbon = pre.current_ribbon + ribbon.paid_ribbon
+        ribbon.save()
+    else:
+        pass
 
 
 class Star(models.Model):
@@ -216,7 +227,7 @@ class Star(models.Model):
     created = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return f'{self.member.email} -> {self.partner.email}'
+        return f'{self.member.email} -> {self.partner.email}, {self.star}'
 
 
 class Pick(models.Model):

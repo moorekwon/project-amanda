@@ -3,7 +3,7 @@ from django.contrib.auth import get_user_model
 from django.db.models import Avg, Count
 from rest_framework import serializers
 
-from members.models import MemberInfo, MemberIdealType
+from members.models import MemberInfo
 
 Member = get_user_model()
 
@@ -71,6 +71,8 @@ class MemberSerializer(serializers.ModelSerializer):
 
 class MemberInfoSerializer(serializers.ModelSerializer):
     member = MemberSerializer(read_only=True)
+    profile_percent = serializers.FloatField(read_only=True)
+    age = serializers.IntegerField(read_only=True)
 
     class Meta:
         model = MemberInfo
@@ -118,9 +120,6 @@ class MemberInfoCreateSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         member_id = self.context['request'].user.id
         member = Member.objects.get(id=member_id)
-        idealtype = MemberIdealType.objects.create(member=member)
-        idealtype.member = member
-        idealtype.save()
         memberinfo = MemberInfo.objects.create(member=member, **validated_data)
         return memberinfo
 
