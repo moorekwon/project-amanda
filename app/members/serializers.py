@@ -3,7 +3,7 @@ from django.contrib.auth import get_user_model
 from django.db.models import Avg, Count
 from rest_framework import serializers
 
-from members.models import MemberInfo
+from members.models import MemberInfo, MemberImage
 
 Member = get_user_model()
 
@@ -125,3 +125,16 @@ class MemberInfoCreateSerializer(serializers.ModelSerializer):
 
     def to_representation(self, instance):
         return MemberInfoSerializer(instance).data
+
+
+class MemberImageSerializer(serializers.ModelSerializer):
+    member_id = serializers.IntegerField(source='member.id', read_only=True)
+    image_id = serializers.IntegerField(source='id', read_only=True)
+
+    class Meta:
+        model = MemberImage
+        fields = (
+            'member_id',
+            'image_id',
+            'image',
+        )
