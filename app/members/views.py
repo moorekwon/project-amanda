@@ -65,6 +65,46 @@ class MemberImagesView(APIView):
         serializer = MemberImageSerializer(images, many=True)
         return Response(serializer.data)
 
+    def patch(self, request, *args, **kwargs):
+        # 기존 내 프로필 이미지들
+        my_images = MemberImage.objects.filter(
+            member=self.request.user
+        )
+
+        # 새로 요청온 프로필 이미지들
+        create_images = request.data.getlist('create_image')
+        delete_images = request.data.getlist('delete_image_id')
+
+        # if my_images.count() + len(create_images) - len(delete_images) < 3:
+        #     raise ValueError('프로필 이미지 개수는 3장 이상 있어야 합니다.')
+
+        # 이미지 복수 생성
+        if create_images:
+            arr = []
+            for create_image in create_images:
+                data = {
+                    'image': create_image,
+                }
+                serializer = MemberImageSerializer(data=data)
+                if serializer.is_valid():
+                    serializer.save(member=self.request.user)
+                    arr.append(serializer.data)
+                else:
+                    return Response(serializer.errors)
+
+        # 이미지 복수 삭제
+        if delete_images:
+            for image_id in delete_images:
+                image = MemberImage.objects.get(id=image_id)
+                image.delete()
+
+        # 변경된 프로필 이미지들
+        changed_images = MemberImage.objects.filter(
+            member=self.request.user
+        )
+        serializer = MemberImageSerializer(changed_images, many=True)
+        return Response(serializer.data)
+
     def post(self, request, *args, **kwargs):
         images = request.data.getlist('image')
 
@@ -91,5 +131,7 @@ class MemberImagesView(APIView):
             raise ValueError('프로필 이미지가 3개 이상 있어야 합니다.')
 
         for image_id in image_ids:
-            MemberImage.objects.get(id=image_id).delete()
+            image = MemberImage.objects.get(id=image_id)
+            image.delete()
+            image.save()
         return Response('이미지가 성공적으로 삭제되었습니다.')

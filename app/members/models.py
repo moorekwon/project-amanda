@@ -2,15 +2,16 @@ import datetime
 import random
 import string
 import unicodedata
+import boto3
 
 from django.contrib.auth.base_user import BaseUserManager
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.db.models import Count
-from django.db.models.signals import post_save
+from django.db.models.signals import post_save, post_delete
 from django.dispatch import receiver
 
-from config.settings._base import AUTH_USER_MODEL
+from config.settings._base import AUTH_USER_MODEL, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_STORAGE_BUCKET_NAME
 
 REGION = (
     ('seoul', '서울'),
@@ -188,6 +189,12 @@ class MemberImage(models.Model):
 
     def __str__(self):
         return f'{self.member.email}'
+
+
+# 인스턴스 생성시 S3에서도 파일 삭제
+@receiver(post_delete, sender=MemberImage)
+def delete_s3_image(sender, instance, *args, **kwargs):
+    instance.image.delete(save=False)
 
 
 class MemberRibbon(models.Model):
