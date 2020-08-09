@@ -2,7 +2,6 @@ import datetime
 import random
 import string
 import unicodedata
-import boto3
 
 from django.contrib.auth.base_user import BaseUserManager
 from django.contrib.auth.models import AbstractUser
@@ -11,7 +10,7 @@ from django.db.models import Count
 from django.db.models.signals import post_save, post_delete
 from django.dispatch import receiver
 
-from config.settings._base import AUTH_USER_MODEL, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_STORAGE_BUCKET_NAME
+from config.settings._base import AUTH_USER_MODEL
 
 REGION = (
     ('seoul', '서울'),
@@ -184,7 +183,7 @@ class MemberPersonality(models.Model):
 
 
 class MemberImage(models.Model):
-    member = models.ForeignKey(AUTH_USER_MODEL, on_delete=models.CASCADE)
+    member = models.ForeignKey(AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='images')
     image = models.ImageField(upload_to='member_images/')
 
     def __str__(self):

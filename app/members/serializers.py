@@ -3,7 +3,7 @@ from django.contrib.auth import get_user_model
 from django.db.models import Avg, Count
 from rest_framework import serializers
 
-from members.models import MemberInfo, MemberImage
+from members.models import MemberInfo, MemberImage, MemberPersonality
 
 Member = get_user_model()
 
@@ -69,10 +69,39 @@ class MemberSerializer(serializers.ModelSerializer):
         return status
 
 
+class PersonalitiesSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = MemberPersonality
+        fields = (
+            'personality',
+        )
+
+    def create(self, validated_data):
+        member_id = self.context['request'].user.id
+        member = Member.objects.get(id=member_id)
+        personality = MemberPersonality.objects.create(member=member, **validated_data)
+        return personality
+
+
+class MemberImageSerializer(serializers.ModelSerializer):
+    member_id = serializers.IntegerField(source='member.id', read_only=True)
+    image_id = serializers.IntegerField(source='id', read_only=True)
+
+    class Meta:
+        model = MemberImage
+        fields = (
+            'member_id',
+            'image_id',
+            'image',
+        )
+
+
 class MemberInfoSerializer(serializers.ModelSerializer):
     member = MemberSerializer(read_only=True)
     profile_percent = serializers.FloatField(read_only=True)
     age = serializers.IntegerField(read_only=True)
+    images = serializers.SerializerMethodField('get_images')
+    personalities = serializers.SerializerMethodField('get_personalities')
 
     class Meta:
         model = MemberInfo
@@ -80,6 +109,7 @@ class MemberInfoSerializer(serializers.ModelSerializer):
             'member',
             'profile_percent',
             'age',
+            'images',
             'birth',
             'nickname',
             'job',
@@ -93,8 +123,17 @@ class MemberInfoSerializer(serializers.ModelSerializer):
             'drinking',
             'smoking',
             'religion',
+            'personalities',
             'introduce',
         )
+
+    def get_images(self, memberinfo):
+        images = memberinfo.member.images.values_list('image', flat=True)
+        return images
+    
+    def get_personalities(self, memberinfo):
+        personalities = memberinfo.member.personalities.values_list('personality', flat=True)
+        return personalities
 
 
 class MemberInfoCreateSerializer(serializers.ModelSerializer):
@@ -125,16 +164,3 @@ class MemberInfoCreateSerializer(serializers.ModelSerializer):
 
     def to_representation(self, instance):
         return MemberInfoSerializer(instance).data
-
-
-class MemberImageSerializer(serializers.ModelSerializer):
-    member_id = serializers.IntegerField(source='member.id', read_only=True)
-    image_id = serializers.IntegerField(source='id', read_only=True)
-
-    class Meta:
-        model = MemberImage
-        fields = (
-            'member_id',
-            'image_id',
-            'image',
-        )
