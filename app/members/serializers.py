@@ -4,6 +4,7 @@ from django.db.models import Avg, Count
 from rest_framework import serializers
 
 from members.models import MemberInfo, MemberImage, MemberPersonality, MemberRibbon
+from utils.exceptions import NegativeNumberException
 
 Member = get_user_model()
 
@@ -192,6 +193,11 @@ class MemberRibbonsSerializer(serializers.ModelSerializer):
         ribbons = MemberRibbon.objects.filter(member=member)
         ribbons_cnt = ribbons.aggregate(Count('member'))['member__count']
         pre = ribbons[ribbons_cnt - 1]
-        current_ribbon = pre.current_ribbon - validated_data['paid_ribbon']
-        ribbon = MemberRibbon.objects.create(member=member, current_ribbon=current_ribbon, **validated_data)
-        return ribbon
+
+        try:
+            current_ribbon = pre.current_ribbon + validated_data['paid_ribbon']
+            assert current_ribbon >= 0
+            ribbon = MemberRibbon.objects.create(member=member, current_ribbon=current_ribbon, **validated_data)
+            return ribbon
+        except AssertionError:
+            raise NegativeNumberException()
