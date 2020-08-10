@@ -197,7 +197,7 @@ def delete_s3_image(sender, instance, *args, **kwargs):
 
 
 class MemberRibbon(models.Model):
-    member = models.ForeignKey(AUTH_USER_MODEL, on_delete=models.CASCADE)
+    member = models.ForeignKey(AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='ribbons')
     paid_ribbon = models.IntegerField()
     current_ribbon = models.PositiveIntegerField()
     when = models.DateTimeField(auto_now_add=True)
@@ -211,19 +211,6 @@ def create_memberribbon(sender, instance, created, **kwargs):
     if created:
         MemberIdealType.objects.create(member=instance.member)
         MemberRibbon.objects.create(member=instance.member, paid_ribbon=10, current_ribbon=10)
-
-
-@receiver(post_save, sender=MemberRibbon)
-def update_memberribbon(sender, instance, created, **kwargs):
-    ribbons = MemberRibbon.objects.filter(member=instance.member)
-    ribbons_cnt = ribbons.aggregate(Count('member'))['member__count']
-    if created and ribbons_cnt > 1:
-        pre = ribbons[ribbons_cnt - 1]
-        ribbon = ribbons.last()
-        ribbon.current_ribbon = pre.current_ribbon + ribbon.paid_ribbon
-        ribbon.save()
-    else:
-        pass
 
 
 class Star(models.Model):

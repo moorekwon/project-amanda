@@ -9,9 +9,10 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from members.models import MemberInfo, MemberImage, MemberPersonality
+from members.models import MemberInfo, MemberImage, MemberPersonality, MemberRibbon
 from members.serializers import (
-    SingUpSerializer, MemberInfoSerializer, MemberInfoCreateSerializer, MemberImageSerializer, PersonalitiesSerializer
+    SingUpSerializer, MemberInfoSerializer, MemberInfoCreateSerializer, MemberImageSerializer, PersonalitiesSerializer,
+    MemberRibbonsSerializer
 )
 
 Member = get_user_model()
@@ -115,3 +116,13 @@ class MemberPersonalitiesView(ListCreateAPIView):
         instance = serializer.save()
         instance.member = self.request.user
         instance.save()
+
+
+class MemberRibbonsView(ListCreateAPIView):
+    queryset = MemberRibbon.objects.all()
+    serializer_class = MemberRibbonsSerializer
+    permission_classes = (IsAuthenticated,)
+
+    def perform_create(self, serializer):
+        instance = serializer.save()
+        instance.member = self.request.user

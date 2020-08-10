@@ -3,7 +3,7 @@ from django.contrib.auth import get_user_model
 from django.db.models import Avg, Count
 from rest_framework import serializers
 
-from members.models import MemberInfo, MemberImage, MemberPersonality
+from members.models import MemberInfo, MemberImage, MemberPersonality, MemberRibbon
 
 Member = get_user_model()
 
@@ -100,6 +100,7 @@ class MemberInfoSerializer(serializers.ModelSerializer):
     member = MemberSerializer(read_only=True)
     profile_percent = serializers.FloatField(read_only=True)
     age = serializers.IntegerField(read_only=True)
+    ribbons = serializers.SerializerMethodField('get_ribbons')
     images = serializers.SerializerMethodField('get_images')
     personalities = serializers.SerializerMethodField('get_personalities')
 
@@ -109,6 +110,7 @@ class MemberInfoSerializer(serializers.ModelSerializer):
             'member',
             'profile_percent',
             'age',
+            'ribbons',
             'images',
             'birth',
             'nickname',
@@ -127,10 +129,14 @@ class MemberInfoSerializer(serializers.ModelSerializer):
             'introduce',
         )
 
+    def get_ribbons(self, memberinfo):
+        ribbons = memberinfo.member.ribbons.last().current_ribbon
+        return ribbons
+
     def get_images(self, memberinfo):
         images = memberinfo.member.images.values_list('image', flat=True)
         return images
-    
+
     def get_personalities(self, memberinfo):
         personalities = memberinfo.member.personalities.values_list('personality', flat=True)
         return personalities
@@ -164,3 +170,28 @@ class MemberInfoCreateSerializer(serializers.ModelSerializer):
 
     def to_representation(self, instance):
         return MemberInfoSerializer(instance).data
+
+
+class MemberRibbonsSerializer(serializers.ModelSerializer):
+    ribbon_id = serializers.IntegerField(source='id', read_only=True)
+    when = serializers.DateTimeField(read_only=True, format='%Y-%m-%d %H:%M:%S')
+    current_ribbon = serializers.IntegerField(read_only=True)
+
+    class Meta:
+        model = MemberRibbon
+        fields = (
+            'ribbon_id',
+            'paid_ribbon',
+            'current_ribbon',
+            'when',
+        )
+
+    def create(self, validated_data):
+        member_id = self.context['request'].user.id
+        member = Member.objects.get(id=member_id)
+        ribbons = MemberRibbon.objects.filter(member=member)
+        ribbons_cnt = ribbons.aggregate(Count('member'))['member__count']
+        pre = ribbons[ribbons_cnt - 1]
+        current_ribbon = pre.current_ribbon - validated_data['paid_ribbon']
+        ribbon = MemberRibbon.objects.create(member=member, current_ribbon=current_ribbon, **validated_data)
+        return ribbon

@@ -4,7 +4,8 @@ from dj_rest_auth.views import (
 from django.urls import path
 
 from members.views import (
-    SignupView, MemberDeleteView, MemberInfoView, MemberInfoCreateView, MemberImagesView, MemberPersonalitiesView
+    SignupView, MemberDeleteView, MemberInfoView, MemberInfoCreateView, MemberImagesView, MemberPersonalitiesView,
+    MemberRibbonsView
 )
 
 urlpatterns = [
@@ -18,4 +19,6 @@ urlpatterns = [
     path('member/personalities/', MemberPersonalitiesView.as_view()),
     path('member/info/', MemberInfoView.as_view()),
     path('member/info/create/', MemberInfoCreateView.as_view()),
+
+    path('member/ribbons/', MemberRibbonsView.as_view()),
 ]
