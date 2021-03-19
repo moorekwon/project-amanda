@@ -6,7 +6,7 @@ authors = ["moorekwon <raccoonhj33@gmail.com>"]
 
 [tool.poetry.dependencies]
 python = "^3.7, <3.9"
-django = "^3.0.8"
+django = "^3.1.6"
 djangorestframework = "^3.11.0"
 supervisor = "^4.2.0"
 boto3 = "^1.14.24"
